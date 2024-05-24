@@ -26,7 +26,7 @@ app.get("/api/courses/:id", (req, res) => {
 
   // GET: if course not present:
   if (!course)
-    res
+    return res
       .status(404)
       .send(`STATUS: 404 The course with the given id was not found`);
 
@@ -38,10 +38,7 @@ app.get("/api/courses/:id", (req, res) => {
 app.post("/api/courses", (req, res) => {
   const { error } = validateCourse(req.body);
   // if invalid, 400 (Bad Req)
-  if (error) {
-    res.status(400).send(result.error.details[0].message);
-    return;
-  }
+  if (error) return res.status(400).send(result.error.details[0].message);
 
   const course = {
     id: courses.length + 1,
@@ -57,17 +54,14 @@ app.put("/api/courses/:id", (req, res) => {
 
   // if not existing, 404 (not found)
   if (!course)
-    res
+    return res
       .status(404)
       .send(`STATUS: 404 The course with the given id was not found`);
 
   // validate
   const { error } = validateCourse(req.body);
   // if invalid, 400 (Bad Req)
-  if (error) {
-    res.status(400).send(result.error.details[0].message);
-    return;
-  }
+  if (error) return res.status(400).send(result.error.details[0].message);
 
   // Found!, update it
   course.name = req.body.name;
@@ -82,6 +76,24 @@ function validateCourse(course) {
 
   return Joi.validate(course, schema);
 }
+
+app.delete("/api/courses/:id", (req, res) => {
+  // lookup
+  const course = courses.find((c) => c.id === parseInt(req.params.id));
+
+  // not found? return 404
+  if (!course)
+    return res
+      .status(404)
+      .send(`STATUS: 404 The course with the given id was not found`);
+
+  // delete!
+  const index = courses.indexOf(course);
+  courses.splice(index, 1);
+
+  // return deleted course
+  res.send(course);
+});
 
 // Listen on a env PORT or default to 3000
 const port = process.env.PORT || 3000;
