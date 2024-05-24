@@ -36,13 +36,9 @@ app.get("/api/courses/:id", (req, res) => {
 
 // POST: adding a course to the array
 app.post("/api/courses", (req, res) => {
-  const schema = {
-    name: Joi.string().min(2).required(),
-  };
-
-  const result = Joi.validate(req.body, schema);
-  if (result.error) {
-    // 400 Bad Request
+  const { error } = validateCourse(req.body);
+  // if invalid, 400 (Bad Req)
+  if (error) {
     res.status(400).send(result.error.details[0].message);
     return;
   }
@@ -54,6 +50,38 @@ app.post("/api/courses", (req, res) => {
   courses.push(course);
   res.send(course);
 });
+
+app.put("/api/courses/:id", (req, res) => {
+  // lookup
+  const course = courses.find((c) => c.id === parseInt(req.params.id));
+
+  // if not existing, 404 (not found)
+  if (!course)
+    res
+      .status(404)
+      .send(`STATUS: 404 The course with the given id was not found`);
+
+  // validate
+  const { error } = validateCourse(req.body);
+  // if invalid, 400 (Bad Req)
+  if (error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
+
+  // Found!, update it
+  course.name = req.body.name;
+  // Return updated course
+  res.send(course);
+});
+
+function validateCourse(course) {
+  const schema = {
+    name: Joi.string().min(2).required(),
+  };
+
+  return Joi.validate(course, schema);
+}
 
 // Listen on a env PORT or default to 3000
 const port = process.env.PORT || 3000;
